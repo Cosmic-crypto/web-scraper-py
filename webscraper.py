@@ -1,18 +1,15 @@
-import requests
 from bs4 import BeautifulSoup
-from urllib.parse import unquote, urlparse, parse_qs
+import requests
+
+
+search = input("Enter a search:\n")
 
 trusted_domains = (
-    "github.com",
-    "reddit.com",
-    "stackoverflow.com",
-    "wikipedia.org",
-    "bbc.co.uk",
-    "geeksforgeeks.org",
+    f"https://bbc.co.uk/search?q={search}",
+    f"https://wikipedia.org/wiki/{search}",
+    f"https://duckduckgo.com/search?q={search}",
+    f"https://edition.cnn.com/search?q={search}"
 )
-
-search = input("Enter a search term: ").strip()
-url = f"https://duckduckgo.com/html/?q={search}"
 
 headers = {
     "User-Agent": (
@@ -22,53 +19,36 @@ headers = {
     )
 }
 
-response = requests.get(url, headers=headers)
-response.raise_for_status()
-
-soup = BeautifulSoup(response.text, "html.parser")
-
-# Extract all hrefs
-raw_links = [a["href"] for a in soup.find_all("a", href=True)]
-
-decoded_links = []
-for href in raw_links:
-    if "/l/?" in href and "uddg=" in href:
-        # DuckDuckGo wraps external links like: /l/?uddg=<encoded target>
-        query = parse_qs(urlparse(href).query)
-        decoded = unquote(query.get("uddg", [""])[0])
-        decoded_links.append(decoded)
-    elif href.startswith("http"):
-        decoded_links.append(href)
-
-# Filter only trusted ones
-trusted_links = [
-    link for link in decoded_links
-    if any(domain in link for domain in trusted_domains)
-]
-
-if not trusted_links:
-    print("No trusted links found.")
-else:
-    print(f"Found {len(trusted_links)} trusted links:")
-    for link in trusted_links:
-        print(" -", link)
-
-# Scrape each trusted link
 with open("scraped_results.txt", "w", encoding="utf-8") as file:
-    for link in trusted_links:
-        print(f"\nScraping {link}...\n")
-        try:
-            page_response = requests.get(link, headers=headers, timeout=10)
-            page_response.raise_for_status()
+    file.write(f"--search results for {search}--")
+    print(f"--search results for {search}--")
 
-            page_soup = BeautifulSoup(page_response.text, "html.parser")
-            elements = page_soup.find_all(["p", "h1", "h2", "h3"])
+for url in trusted_domains:
 
-            for el in elements:
-                text = el.get_text(strip=True)
-                if text:
-                    file.write(f"{text}\n\n")
-                    print(text)
+    try:
+        response = requests.get(url, headers=headers)
+        response.raise_for_status()
+    
+    except requests.RequestException as e:
+        print(f"failed to fetch url {url}: {e}")
+        continue
 
-        except Exception as e:
-            print(f"Failed to scrape {link}: {e}")
+    soup = BeautifulSoup(response.text, "html.parser")
+    page = soup.find_all(["span", "p", "h1", "h2", "h3", "h4", "h5", "h6"])
+
+    if not page:
+        print(f"data could not be found from {url}")
+        continue
+
+    with open("scraped_results.txt", "a", encoding="utf-8") as file:
+        file.write(f"\n--- Results from {url} ---\n\n")
+        print(f"--- Results from {url} ---")
+
+        text = data.get_text(strip=True)
+
+        for data in page:
+            if text:
+                file.write(f"{text}\n")
+                print(text)
+
+print(f"All data has been scraped from URLS: {url}!")
