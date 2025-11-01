@@ -63,6 +63,7 @@ try:
         
         #-------------------
         # writes the data to the file
+        # prints the data out to the console
         #-------------------
         with open("scraped_results.txt", "a", encoding="utf-8") as file:
             file.write(f"\n--- Results from {url} ---\n\n")
