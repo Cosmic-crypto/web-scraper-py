@@ -1,105 +1,100 @@
-DuckDuckGo Trusted Link Scraper
-Overview
+🕵️ Web Multi-Site Scraper
 
-This Python script searches DuckDuckGo for a user-specified query, identifies links from a predefined list of trusted domains, and scrapes textual content (headings and paragraphs) from those pages. All scraped data is saved to a text file for further use.
+A lightweight Python script that scrapes text content (headings, paragraphs, and spans) from a few trusted news and information domains — including BBC, Wikipedia, DuckDuckGo, and CNN — based on a user-provided search term.
 
-Features
+📦 Features
 
-* Accepts user input for search queries.
+✅ Scrapes multiple trusted domains automatically
+✅ Works with command-line arguments (argv) or interactive input
+✅ Collects all text data into a single file (scraped_results.txt)
+✅ Handles connection errors gracefully
+✅ Uses a modern browser-like user agent header
 
-* Uses DuckDuckGo search results to locate relevant links.
+🧰 Requirements
 
-* Filters links to only include trusted domains:
+Make sure you have Python 3.8+ installed.
+Then install the required libraries:
 
-  * GitHub
-
-  * Reddit
-
-  * Stack Overflow
-
-  * Wikipedia
-
-  * BBC
-
-  * GeeksforGeeks
-   (feel free to change this!)
-
-Automatically decodes DuckDuckGo’s redirect URLs.
-
-Scrapes headings (```h1```, ```h2```, ```h3```) and paragraph (```p```) text.
-
-Saves the scraped content to scraped_results.txt.
-
-Prints progress and scraped content to the console.
-
-Requirements
-
-Python 3.7+
-
-Required Python packages:
-
-``` bash
+```bash
 pip install requests beautifulsoup4
 ```
 
-Usage
-
-Clone or download the repository.
-
-Run the script:
-
-``` bash
-python scraper.py
+🚀 Usage
+Option 1: Pass a search term as a command-line argument
 ```
-Example run:
-```
-Enter your search term when prompted:
-
-Enter a search term: web scraper
+python webscraper.py python
 ```
 
-The script will display the trusted links found and scrape their content.
+Option 2: Run it without arguments (it will prompt you)
+```
+python webscraper.py
+```
 
-All scraped text will be saved to scraped_results.txt in the current directory.
+Then type your search term when asked:
 
-How It Works:
+```
+Enter a search term: python
+```
 
-1 DuckDuckGo Search
+⚙️ How It Works
 
-* The script performs a DuckDuckGo search using the user-provided query.
+The script takes a search term from the command line or user input.
 
-* It sends a request with a custom User-Agent to simulate a real browser.
+It constructs four URLs:
 
-2 Link Extraction & Decoding
+https://bbc.co.uk/search?q=TERM
 
-* Extracts all <a> elements from the search results.
+https://wikipedia.org/wiki/TERM
 
-* Decodes DuckDuckGo’s redirect links (/l/?uddg=...) to get actual URLs.
+https://duckduckgo.com/search?q=TERM
 
-3 Trusted Domain Filtering
+https://edition.cnn.com/search?q=TERM
 
-* Checks each decoded link against a list of trusted domains.
+It fetches each page using the requests library and parses it with BeautifulSoup.
 
-* Only links matching trusted domains are scraped.
+It extracts visible text from `<span>`, `<p>`, `<h1>`, `<h2>`, and `<h3>` tags.
 
-4 Content Scraping
+It saves all text content into scraped_results.txt and prints it to the terminal.
 
-* Fetches each trusted page.
+🗂️ Output
 
-* Extracts text from headings (```h1```, ```h2```, ```h3```) and paragraphs (```p```).
+All results are saved in:
 
-* Saves the content to a text file and prints it to the console.
+scraped_results.txt
 
-Notes
 
-Make sure to respect each website’s terms of service.
+Each domain’s section is clearly separated:
 
-Use the script responsibly to avoid overloading servers.
+```
+--- Results from https://bbc.co.uk/search?q=python ---
 
-The script works best with static content; dynamic JavaScript content may not be fully captured.
 
-License
+Python is a programming language...
+BBC News - Technology - Python in AI...
+```
 
-This project is provided for educational purposes. No redistribution of scraped content is allowed without permission from the respective website.
+🧱 Example Run
+```
+python webscraper.py AI
 
-feel free to edit this in any way you feel suit and give me feedback, also i'd say 85% code is me 15% is chatgpt, so credits: chatgpt!
+
+🖨️ Output:
+
+--search results for AI--
+--- Results from https://bbc.co.uk/search?q=AI ---
+BBC News - AI is transforming business...
+--- Results from https://wikipedia.org/wiki/AI ---
+Artificial intelligence (AI) is...
+```
+
+The same content is also stored in scraped_results.txt.
+
+⚠️ Notes
+
+Some sites (like DuckDuckGo or CNN) may restrict automated scraping.
+
+If you get empty results, the site may require a more advanced approach (like Selenium).
+
+Always check a website’s robots.txt before scraping.
+
+feel free to edit this to anypoint
