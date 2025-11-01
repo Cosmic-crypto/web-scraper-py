@@ -1,8 +1,11 @@
 from bs4 import BeautifulSoup
 import requests
+from sys import argv
 
+search = "".join(argv[1:])
 
-search = input("Enter a search:\n")
+if search.strip() == "":
+    search = input("Enter a search term: ")
 
 trusted_domains = (
     f"https://bbc.co.uk/search?q={search}",
@@ -23,32 +26,34 @@ with open("scraped_results.txt", "w", encoding="utf-8") as file:
     file.write(f"--search results for {search}--")
     print(f"--search results for {search}--")
 
-for url in trusted_domains:
+try:
+    for url in trusted_domains:
+        try:
+            response = requests.get(url, headers=headers)
+            response.raise_for_status()
+        
+        except requests.RequestException as e:
+            print(f"failed to fetch url {url}: {e}")
+            continue
 
-    try:
-        response = requests.get(url, headers=headers)
-        response.raise_for_status()
-    
-    except requests.RequestException as e:
-        print(f"failed to fetch url {url}: {e}")
-        continue
+        soup = BeautifulSoup(response.text, "html.parser")
+        page = soup.find_all(["span", "p", "h1", "h2", "h3"])
 
-    soup = BeautifulSoup(response.text, "html.parser")
-    page = soup.find_all(["span", "p", "h1", "h2", "h3", "h4", "h5", "h6"])
+        if not page:
+            print(f"data could not be found from {url}")
+            continue
+        with open("scraped_results.txt", "a", encoding="utf-8") as file:
+            file.write(f"\n--- Results from {url} ---\n\n")
+            print(f"--- Results from {url} ---")
 
-    if not page:
-        print(f"data could not be found from {url}")
-        continue
+            for data in page:
+                text = data.get_text(strip=True)
 
-    with open("scraped_results.txt", "a", encoding="utf-8") as file:
-        file.write(f"\n--- Results from {url} ---\n\n")
-        print(f"--- Results from {url} ---")
+                if text:
+                    file.write(f"{text}\n")
+                    print(text)
 
-        text = data.get_text(strip=True)
+    print(f"All data has been scraped from URLS: {url}!")
 
-        for data in page:
-            if text:
-                file.write(f"{text}\n")
-                print(text)
-
-print(f"All data has been scraped from URLS: {url}!")
+except Exception as e:
+    print(f"An error occurred: {e}")
