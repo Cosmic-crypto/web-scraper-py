@@ -2,15 +2,15 @@ from bs4 import BeautifulSoup
 from requests import get, RequestException
 from sys import argv
 
-search = "".join(argv[1:])  # user can provide the search term as a command line argument
+search_ = "".join(argv[1:]) # user can provide the search term as a command line argument
 
 if search.strip() == "": # if the user has not provided a search term the user will be prompted to enter one
 
     # ensures that a search term is provided
     while True:
-        search = input("Enter a search term: ")
+        search_ = input("Enter a search term: ")
 
-        if search.strip() != "":
+        if search_.strip() != "":
             break
         else:
             print("Please enter a search term.")
@@ -44,44 +44,48 @@ with open("scraped_results.txt", "w", encoding="utf-8") as file:
     print(f"--search results for {search}--")
 
 #-------------------
-# scrapes the data from the trusted domains
+# creates a function that scrapes the data from the trusted domains
 #-------------------
-try:
-    for url in trusted_domains:
+def scrape(times: int = 1, search: str = search_, trusted_domains: tuple | list = trusted_domains, headers: dict = headers):
+    for time in range(times):
         try:
-            response = get(url, headers=headers) # sends a GET request to the URL to get the HTML content
-            response.raise_for_status() # raises an exception if the request was unsuccessful
-        
-        except RequestException as e: # handles any exceptions that may occur
-            print(f"failed to fetch url {url}: {e}")
-            continue
+            for url in trusted_domains:
+                try:
+                    response = get(url, headers=headers) # sends a GET request to the URL to get the HTML content
+                    response.raise_for_status() # raises an exception if the request was unsuccessful
+                
+                except RequestException as e: # handles any exceptions that may occur
+                    print(f"failed to fetch url {url}: {e}")
+                    continue
 
-        soup = BeautifulSoup(response.text, "html.parser") # creates the html parser
-        page = soup.find_all(["span", "p", "h1", "h2", "h3"]) # defines all the data and tags to be scraped
+                soup = BeautifulSoup(response.text, "html.parser") # creates the html parser
+                page = soup.find_all(["span", "p", "h1", "h2", "h3"]) # defines all the data and tags to be scraped
 
-        # ensures that the data is found and else it will go to the next loop
-        if not page:
-            print(f"data could not be found from {url}")
-            continue
-        
-        #-------------------
-        # writes the data to the file
-        # prints the data out to the console
-        #-------------------
-        with open("scraped_results.txt", "a", encoding="utf-8") as file:
-            file.write(f"\n--- Results from {url} ---\n\n")
-            print(f"--- Results from {url} ---")
+                # ensures that the data is found and else it will go to the next loop
+                if not page:
+                    print(f"data could not be found from {url}")
+                    continue
+                
+                #-------------------
+                # writes the data to the file
+                # prints the data out to the console
+                #-------------------
+                with open("scraped_results.txt", "a", encoding="utf-8") as file:
+                    file.write(f"\n--- Results from {url} ---\n\n")
+                    print(f"--- Results from {url} ---")
 
-            for data in page:
-                text = data.get_text(strip=True)
+                    for data in page:
+                        text = data.get_text(strip=True)
 
-                # ensures that the text is not empty
-                if text:
-                    file.write(f"{text}\n")
-                    print(text)
-            file.write("All data has been scraped from URLS: {url}!") # writes a message to the file to let the user know that the data has been scraped
-    print(f"All data has been scraped from URLS: {url}!") # prints a message to the console to let the user know that the data has been scraped
+                        # ensures that the text is not empty
+                        if text:
+                            file.write(f"{text}\n")
+                            print(text)
+                    file.write("All data has been scraped from URLS: {url}!") # writes a message to the file to let the user know that the data has been scraped
+            print(f"All data has been scraped from URLS: {url}!") # prints a message to the console to let the user know that the data has been scraped
 
-except Exception as e: # handles any exceptions that may occur
-    print(f"An error occurred: {e}")
+        except Exception as e: # handles any exceptions that may occur
+            print(f"An error occurred: {e}")
 
+if __name__ == "__main__":
+    scrape()
