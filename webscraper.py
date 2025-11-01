@@ -5,8 +5,8 @@ from sys import argv
 search = "".join(argv[1:])
 
 if search.strip() == "": # if the user has not provided a search term the user will be prompted to enter one
+    
     # ensures that a search term is provided
-
     while True:
         search = input("Enter a search term: ")
 
@@ -81,3 +81,4 @@ try:
 
 except Exception as e: # handles any exceptions that may occur
     print(f"An error occurred: {e}")
+
