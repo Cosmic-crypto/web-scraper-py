@@ -1,5 +1,5 @@
 from bs4 import BeautifulSoup
-import requests
+from requests import get, RequestException
 from sys import argv
 
 search = "".join(argv[1:])
@@ -29,10 +29,10 @@ with open("scraped_results.txt", "w", encoding="utf-8") as file:
 try:
     for url in trusted_domains:
         try:
-            response = requests.get(url, headers=headers)
+            response = get(url, headers=headers)
             response.raise_for_status()
         
-        except requests.RequestException as e:
+        except RequestException as e:
             print(f"failed to fetch url {url}: {e}")
             continue
 
