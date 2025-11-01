@@ -2,7 +2,7 @@ from bs4 import BeautifulSoup
 from requests import get, RequestException
 from sys import argv
 
-search = "".join(argv[1:])
+search = "".join(argv[1:])  # user can provide the search term as a command line argument
 
 if search.strip() == "": # if the user has not provided a search term the user will be prompted to enter one
 
@@ -84,3 +84,4 @@ try:
 
 except Exception as e: # handles any exceptions that may occur
     print(f"An error occurred: {e}")
+
