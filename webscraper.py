@@ -46,7 +46,7 @@ with open("scraped_results.txt", "w", encoding="utf-8") as file:
 #-------------------
 # creates a function that scrapes the data from the trusted domains
 #-------------------
-def scrape(trusted_URLs: tuple | list, headers: dict, filename: str, times: int = 1) -> str:
+def scrape(trusted_URLs: tuple[str] | list[str], headers: dict, filename: str, times: int = 1) -> str:
     for time in range(times):
         try:
             for url in trusted_URLs:
@@ -89,3 +89,4 @@ def scrape(trusted_URLs: tuple | list, headers: dict, filename: str, times: int 
 
 if __name__ == "__main__":
     scrape(trusted_domains, headers_, "scraped_results.txt")
+
