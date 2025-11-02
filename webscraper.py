@@ -1,10 +1,43 @@
 from bs4 import BeautifulSoup
 from requests import get, RequestException
 from sys import argv
+from argparse import ArgumentParser
 
-search_ = "".join(argv[1:]) # user can provide the search term as a command line argument
 
-if search.strip() == "": # if the user has not provided a search term the user will be prompted to enter one
+#-------------------
+# creates a function that gets the search term from either argparse, sys.argv, or user input
+#-------------------
+def get_search_term() -> str:
+    parser = ArgumentParser(description="Search scraper tool")
+    parser.add_argument(
+        "-s", "--search",
+        type=str,
+        help="Search term (e.g., -s python)"
+    )
+
+    # Parse known args (ignore others so script doesn’t crash if mixed)
+    args, unknown = parser.parse_known_args()
+
+    # If -s or --search was used
+    if args.search:
+        return args.search
+
+    # Else if a plain arg was passed (e.g., python script.py hello)
+    elif len(argv) > 1:
+        # skip the script name
+        return " ".join(argv[1:])
+
+    # Else prompt interactively
+    else:
+        return input("Enter a search term: ").strip()
+
+
+#-------------------
+# gets the search term and ensures it’s not empty
+#-------------------
+search_ = get_search_term()
+
+if search_.strip() == "":  # if the user has not provided a search term the user will be prompted to enter one
 
     # ensures that a search term is provided
     while True:
@@ -15,15 +48,17 @@ if search.strip() == "": # if the user has not provided a search term the user w
         else:
             print("Please enter a search term.")
 
+
 #-------------------
 # defines the trusted domains
 #-------------------
 trusted_domains = (
-    f"https://bbc.co.uk/search?q={search}",
-    f"https://wikipedia.org/wiki/{search}",
-    f"https://duckduckgo.com/search?q={search}",
-    f"https://edition.cnn.com/search?q={search}"
+    f"https://bbc.co.uk/search?q={search_}",
+    f"https://wikipedia.org/wiki/{search_}",
+    f"https://duckduckgo.com/search?q={search_}",
+    f"https://edition.cnn.com/search?q={search_}"
 )
+
 
 #-------------------
 # creates user agent
@@ -36,36 +71,38 @@ headers_ = {
     )
 }
 
+
 #-------------------
 # opens a file to write what search results are being scraped and where it's being scraped from
 #-------------------
 with open("scraped_results.txt", "w", encoding="utf-8") as file:
-    file.write(f"--search results for {search}--")
-    print(f"--search results for {search}--")
+    file.write(f"--search results for {search_}--\n")
+    print(f"--search results for {search_}--")
+
 
 #-------------------
 # creates a function that scrapes the data from the trusted domains
 #-------------------
-def scrape(trusted_URLs: tuple[str] | list[str], headers: dict, filename: str, times: int = 1) -> str:
+def scrape(trusted_URLs: tuple[str, ...] | list[str], headers: dict, filename: str, times: int = 1) -> None:
     for time in range(times):
         try:
             for url in trusted_URLs:
                 try:
-                    response = get(url, headers=headers) # sends a GET request to the URL to get the HTML content
-                    response.raise_for_status() # raises an exception if the request was unsuccessful
-                
-                except RequestException as e: # handles any exceptions that may occur
+                    response = get(url, headers=headers)  # sends a GET request to the URL to get the HTML content
+                    response.raise_for_status()  # raises an exception if the request was unsuccessful
+
+                except RequestException as e:  # handles any exceptions that may occur
                     print(f"failed to fetch url {url}: {e}")
                     continue
 
-                soup = BeautifulSoup(response.text, "html.parser") # creates the html parser
-                page = soup.find_all(["span", "p", "h1", "h2", "h3"]) # defines all the data and tags to be scraped
+                soup = BeautifulSoup(response.text, "html.parser")  # creates the html parser
+                page = soup.find_all(["span", "p", "h1", "h2", "h3"])  # defines all the data and tags to be scraped
 
                 # ensures that the data is found and else it will go to the next loop
                 if not page:
                     print(f"data could not be found from {url}")
                     continue
-                
+
                 #-------------------
                 # writes the data to the file
                 # prints the data out to the console
@@ -81,12 +118,18 @@ def scrape(trusted_URLs: tuple[str] | list[str], headers: dict, filename: str, t
                         if text:
                             file.write(f"{text}\n")
                             print(text)
-                    file.write("All data has been scraped from URLS: {url}!") # writes a message to the file to let the user know that the data has been scraped
-            print(f"All data has been scraped from URLS: {url}!") # prints a message to the console to let the user know that the data has been scraped
 
-        except Exception as e: # handles any exceptions that may occur
+            # writes and prints a message to let the user know that the data has been scraped
+            with open(filename, "a", encoding="utf-8") as file:
+                file.write("\nAll data has been scraped from the provided URLs!\n")
+            print("All data has been scraped from the provided URLs!")
+
+        except Exception as e:  # handles any exceptions that may occur
             print(f"An error occurred: {e}")
 
+
+#-------------------
+# runs the scraper if the script is not run as a module
+#-------------------
 if __name__ == "__main__":
     scrape(trusted_domains, headers_, "scraped_results.txt")
-
