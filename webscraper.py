@@ -28,7 +28,7 @@ trusted_domains = (
 #-------------------
 # creates user agent
 #-------------------
-headers = {
+headers_ = {
     "User-Agent": (
         "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
         "AppleWebKit/537.36 (KHTML, like Gecko) "
@@ -46,10 +46,10 @@ with open("scraped_results.txt", "w", encoding="utf-8") as file:
 #-------------------
 # creates a function that scrapes the data from the trusted domains
 #-------------------
-def scrape(times: int = 1, search: str = search_, trusted_domains: tuple | list = trusted_domains, headers: dict = headers):
+def scrape(trusted_URLs: tuple | list, headers: dict, filename: str, times: int = 1) -> str:
     for time in range(times):
         try:
-            for url in trusted_domains:
+            for url in trusted_URLs:
                 try:
                     response = get(url, headers=headers) # sends a GET request to the URL to get the HTML content
                     response.raise_for_status() # raises an exception if the request was unsuccessful
@@ -70,7 +70,7 @@ def scrape(times: int = 1, search: str = search_, trusted_domains: tuple | list 
                 # writes the data to the file
                 # prints the data out to the console
                 #-------------------
-                with open("scraped_results.txt", "a", encoding="utf-8") as file:
+                with open(filename, "a", encoding="utf-8") as file:
                     file.write(f"\n--- Results from {url} ---\n\n")
                     print(f"--- Results from {url} ---")
 
@@ -88,4 +88,4 @@ def scrape(times: int = 1, search: str = search_, trusted_domains: tuple | list 
             print(f"An error occurred: {e}")
 
 if __name__ == "__main__":
-    scrape()
+    scrape(trusted_domains, headers_, "scraped_results.txt")
