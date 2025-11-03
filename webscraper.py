@@ -76,8 +76,9 @@ choice = input("y/n: ").lower().strip()
 #-------------------
 # allows the user to add more domains
 #-------------------
-while True:
-    if choice == "y":
+
+if choice == "y":
+    while True:
         try:
             while True:
                 domain = input("Enter a URL: ").strip()
@@ -98,12 +99,6 @@ while True:
         except KeyboardInterrupt:
             print("\nGoodbye!")
             break
-
-    elif choice == "n":
-        break
-    else:
-        print("Invalid choice. Please enter 'y' or 'n'.")
-        choice = input("y/n: ").lower().strip()
 
 #-------------------
 # opens a file to write what search results are being scraped and where it's being scraped from
