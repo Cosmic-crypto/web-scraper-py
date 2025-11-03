@@ -4,7 +4,7 @@ A lightweight Python script that scrapes text content (headings, paragraphs, and
 
 📦 Features
 
-✅ Scrapes multiple trusted domains automatically
+✅ Scrapes multiple trusted domains automatically (you can add to those)
 ✅ Works with command-line arguments (argv) or interactive input
 ✅ Collects all text data into a single file (scraped_results.txt)
 ✅ Handles connection errors gracefully
