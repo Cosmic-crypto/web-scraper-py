@@ -52,13 +52,12 @@ if search_.strip() == "":  # if the user has not provided a search term the user
 #-------------------
 # defines the trusted domains
 #-------------------
-trusted_domains = (
+trusted_domains = [
     f"https://bbc.co.uk/search?q={search_}",
     f"https://wikipedia.org/wiki/{search_}",
     f"https://duckduckgo.com/search?q={search_}",
     f"https://edition.cnn.com/search?q={search_}"
-)
-
+]
 
 #-------------------
 # creates user agent
@@ -71,6 +70,40 @@ headers_ = {
     )
 }
 
+print(f"trusted_URLs: {trusted_URLs} would you like to add any more domains?")
+choice = input("y/n: ").lower().strip()
+
+#-------------------
+# allows the user to add more domains
+#-------------------
+while True:
+    if choice == "y":
+        try:
+            while True:
+                domain = input("Enter a URL: ").strip()
+
+                if domain.lower() in ("break", "exit", "quit", "stop"):
+                    break
+
+                # saftey check to ensure the URL is valid
+                response = get(domain, headers=headers) # picks the last url and checks it
+                
+                if response.status_code == 200 and domain not in trusted_domains: # makes sure the URL is valid and not already in the list
+                    trusted_domains.append(domain)
+                    print("URL added successfully.")
+                else:
+                    print("Failed to add URL.")
+
+        # allows the user to exit the loop
+        except KeyboardInterrupt:
+            print("\nGoodbye!")
+            break
+
+    elif choice == "n":
+        break
+    else:
+        print("Invalid choice. Please enter 'y' or 'n'.")
+        choice = input("y/n: ").lower().strip()
 
 #-------------------
 # opens a file to write what search results are being scraped and where it's being scraped from
@@ -126,6 +159,7 @@ def scrape(trusted_URLs: tuple[str, ...] | list[str], headers: dict, filename: s
 
         except Exception as e:  # handles any exceptions that may occur
             print(f"An error occurred: {e}")
+
 
 
 #-------------------
