@@ -100,6 +100,8 @@ if choice == "y":
             print("\nGoodbye!")
             break
 
+trusted_domains = tuple(trusted_domains)
+
 #-------------------
 # opens a file to write what search results are being scraped and where it's being scraped from
 #-------------------
