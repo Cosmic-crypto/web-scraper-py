@@ -4,12 +4,13 @@ A lightweight Python script that scrapes text content (headings, paragraphs, and
 
 📦 Features
 
-✅ Scrapes multiple trusted domains automatically (*You can add to those as it's now a list instead of a tuple, but it get's changed into a tuple after you add or don't add the extra domains to save spae and time*)
-
+✅ Scrapes multiple trusted domains automatically
 ✅ Works with command-line arguments (argv/argparse) or interactive input
 ✅ Collects all text data into a single file (scraped_results.txt)
 ✅ Handles connection errors gracefully
 ✅ Uses a modern browser-like user agent header
+
+ (*You can add to the url list as it's now a list instead of a tuple, but it get's changed into a tuple after you add or don't add the extra domains to save space and time*)
 
 🧰 Requirements
 
