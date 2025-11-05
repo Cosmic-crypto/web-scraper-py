@@ -1,15 +1,17 @@
-from bs4 import BeautifulSoup
-from requests import get, RequestException
-from sys import argv
-from argparse import ArgumentParser
-from webbrowser import open_new_tab
+from bs4 import BeautifulSoup as _BeautifulSoup
+from requests import get as _get, RequestException as _RequestException
+from sys import argv as _argv
+from argparse import ArgumentParser as _ArgumentParser
+from webbrowser import open_new_tab as _open_new_tab
+from random import uniform as _uniform
+from time import sleep as _sleep
 
 
 #-------------------
 # creates a function that gets the search term from either argparse, sys.argv, or user input
 #-------------------
 def get_search_term() -> str:
-    parser = ArgumentParser(description="Search scraper tool")
+    parser = _ArgumentParser(description="Search scraper tool")
     parser.add_argument(
         "-s", "--search",
         type=str,
@@ -24,9 +26,9 @@ def get_search_term() -> str:
         return args.search
 
     # Else if a plain arg was passed (e.g., python script.py hello)
-    elif len(argv) > 1:
+    elif len(_argv) > 1:
         # skip the script name
-        return " ".join(argv[1:])
+        return " ".join(_argv[1:])
 
     # Else prompt interactively
     else:
@@ -49,7 +51,6 @@ if search_.strip() == "":  # if the user has not provided a search term the user
         else:
             print("Please enter a search term.")
 
-
 #-------------------
 # defines the trusted domains
 #-------------------
@@ -71,38 +72,6 @@ headers_ = {
     )
 }
 
-print(f"trusted_URLs: {trusted_URLs} would you like to add any more domains?")
-choice = input("y/n: ").lower().strip()
-
-#-------------------
-# allows the user to add more domains
-#-------------------
-
-if choice == "y":
-    while True:
-        try:
-            while True:
-                domain = input("Enter a URL: ").strip()
-
-                if domain.lower() in ("break", "exit", "quit", "stop"):
-                    break
-
-                # saftey check to ensure the URL is valid
-                response = get(domain, headers=headers) # picks the last url and checks it
-                
-                if response.status_code == 200 and domain not in trusted_domains: # makes sure the URL is valid and not already in the list
-                    trusted_domains.append(domain)
-                    print("URL added successfully.")
-                else:
-                    print("Failed to add URL.")
-
-        # allows the user to exit the loop
-        except KeyboardInterrupt:
-            print("\nGoodbye!")
-            break
-
-trusted_domains = tuple(trusted_domains)
-
 #-------------------
 # opens a file to write what search results are being scraped and where it's being scraped from
 #-------------------
@@ -114,31 +83,31 @@ with open("scraped_results.txt", "w", encoding="utf-8") as file:
 #-------------------
 # creates a function that scrapes the data from the trusted domains
 #-------------------
-def scrape(trusted_URLs: tuple[str, ...] | list[str], headers: dict, filename: str, times: int = 1) -> None:
-    for time in range(times):
-        try:
-            for url in trusted_URLs:
-                try:
-                    response = get(url, headers=headers)  # sends a GET request to the URL to get the HTML content
-                    response.raise_for_status()  # raises an exception if the request was unsuccessful
+def scrape(trusted_URLs: tuple[str, ...] | list[str], filename: str, search_term: str, times: int = 1, headers: dict = headers_) -> None:
+    with open(filename, "a", encoding="utf-8") as file:
+        for _ in range(times):
+            try:
+                for url in trusted_URLs:
+                    try:
+                        response = _get(url, headers=headers)  # sends a GET request to the URL to get the HTML content
+                        response.raise_for_status()  # raises an exception if the request was unsuccessful
 
-                except RequestException as e:  # handles any exceptions that may occur
-                    print(f"failed to fetch url {url}: {e}")
-                    continue
+                    except _RequestException:  # handles any exceptions that may occur
+                        print(f"failed to fetch url {url}")
+                        continue
 
-                soup = BeautifulSoup(response.text, "html.parser")  # creates the html parser
-                page = soup.find_all(["span", "p", "h1", "h2", "h3"])  # defines all the data and tags to be scraped
+                    soup = _BeautifulSoup(response.text, "html.parser")  # creates the html parser
+                    page = soup.find_all(["span", "p", "h1", "h2", "h3"])  # defines all the data and tags to be scraped
 
-                # ensures that the data is found and else it will go to the next loop
-                if not page:
-                    print(f"data could not be found from {url}")
-                    continue
+                    # ensures that the data is found and else it will go to the next loop
+                    if not page:
+                        print(f"data could not be found from {url}")
+                        continue
 
-                #-------------------
-                # writes the data to the file
-                # prints the data out to the console
-                #-------------------
-                with open(filename, "a", encoding="utf-8") as file:
+                    #-------------------
+                    # writes the data to the file
+                    # prints the data out to the console
+                    #-------------------
                     file.write(f"\n--- Results from {url} ---\n\n")
                     print(f"--- Results from {url} ---")
 
@@ -150,30 +119,62 @@ def scrape(trusted_URLs: tuple[str, ...] | list[str], headers: dict, filename: s
                             file.write(f"{text}\n")
                             print(text)
 
-            # writes and prints a message to let the user know that the data has been scraped
-            with open(filename, "a", encoding="utf-8") as file:
+                # writes and prints a message to let the user know that the data has been scraped
                 file.write("\nAll data has been scraped from the provided URLs!\n")
-            print("All data has been scraped from the provided URLs!")
+                print("All data has been scraped from the provided URLs!")
+                _sleep(_uniform(1, 7))
 
-        except Exception as e:  # handles any exceptions that may occur
-            print(f"An error occurred: {e}")
+            except Exception as e:  # handles any exceptions that may occur 
+                print(f"An error occurred: {e}")
 
 #-------------------
 # creates a function that opens the trusted domains in the default browser
 #-------------------
-def open_browser(trusted_URLs: list | tuple):
+def open_browser(trusted_URLs: tuple[str, ...] | list[str]):
     # loops through all the trusted domains and opens them in a new tab
     for url in trusted_URLs:
-        open_new_tab(url)
+        _open_new_tab(url)
 
 
 #-------------------
 # runs the scraper and opens the browser (optional) if the script is not run as a module
 #-------------------
 if __name__ == "__main__":
-    scrape(trusted_domains, headers_, "scraped_results.txt")
+    print(f"trusted URLs: {trusted_domains}\n would you like to add any more domains?")
+    choice = input("y/n: ").lower().strip()
+
+    #-------------------
+    # allows the user to add more domains
+    #-------------------
+
+    if choice == "y":
+        while True:
+            try:
+                while True:
+                    domain = input("Enter a URL: ").strip()
+
+                    if domain.lower() in ("break", "exit", "quit", "stop"):
+                        break
+
+                    # saftey check to ensure the URL is valid
+                    response = _get(domain, headers=headers_) # picks the last url and checks it
+                    
+                    if response.status_code == 200 and domain not in trusted_domains: # makes sure the URL is valid and not already in the list
+                        trusted_domains.append(domain)
+                        print("URL added successfully.")
+                    else:
+                        print("Failed to add URL.")
+
+            # allows the user to exit the loop
+            except KeyboardInterrupt:
+                print("\nGoodbye!")
+                break
+
+    trusted_domains = tuple(trusted_domains)
+
+    scrape(trusted_domains, "scraped_results.txt")
     
     choice = input("Open browser? (y/n): ").lower().strip()
     
-    if choice == "y":
+    if choice in ("yes", "y"):
         open_browser(trusted_domains)
