@@ -2,6 +2,7 @@ from bs4 import BeautifulSoup
 from requests import get, RequestException
 from sys import argv
 from argparse import ArgumentParser
+from webbrowser import open_new_tab
 
 
 #-------------------
@@ -157,10 +158,22 @@ def scrape(trusted_URLs: tuple[str, ...] | list[str], headers: dict, filename: s
         except Exception as e:  # handles any exceptions that may occur
             print(f"An error occurred: {e}")
 
+#-------------------
+# creates a function that opens the trusted domains in the default browser
+#-------------------
+def open_browser(trusted_URLs: list | tuple):
+    # loops through all the trusted domains and opens them in a new tab
+    for url in trusted_URLs:
+        open_new_tab(url)
 
 
 #-------------------
-# runs the scraper if the script is not run as a module
+# runs the scraper and opens the browser (optional) if the script is not run as a module
 #-------------------
 if __name__ == "__main__":
     scrape(trusted_domains, headers_, "scraped_results.txt")
+    
+    choice = input("Open browser? (y/n): ").lower().strip()
+    
+    if choice == "y":
+        open_browser(trusted_domains)
