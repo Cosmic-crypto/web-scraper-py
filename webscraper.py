@@ -7,7 +7,7 @@ from webbrowser import open_new_tab as _open_new_tab
 from random import uniform as _uniform
 from time import sleep as _sleep
 from google import genai as _genai
-from os import path as _path
+from pathlib import Path as _Path
 
 #-------------------
 # creates a function that gets the search term from either argparse, sys.argv, or user input
@@ -107,7 +107,7 @@ with open("scraped_results.txt", "w", encoding="utf-8") as file:
 #-------------------
 # creates a function that scrapes the data from the trusted domains
 #-------------------
-def scrape(trusted_URLs: tuple[str, ...] | list[str], filename: str, times: int = 1, headers: dict = headers_, api_key: str) -> None:
+def scrape(trusted_URLs: tuple[str, ...] | list[str], filename: str, api_key: str, times: int = 1, headers: dict = headers_) -> None:
     with open(filename, "a", encoding="utf-8") as file:
         # the loop allows you to scrape the data multiple times
         for _ in range(times):
@@ -170,22 +170,13 @@ def open_browser(trusted_URLs: tuple[str, ...] | list[str]):
 # runs the scraper and opens the browser (optional) if the script is not run as a module
 #-------------------
 if __name__ == "__main__":
-    API_key = None
 
-    if _path.exists(".env"):
-        with open(".env", "r") as f:
-            for line in f:
-                line = line.strip()
-                if line and not line.startswith("#"):
-                    if "=" in line:
-                        key, value = line.split("=", 1)
-                        if key.strip().lower() == "genai_key":
-                            API_key = value.strip()
+    key_file = _Path("genai.key")
+    if key_file.exists():
+        with key_file.open() as f:
+            API_key = f.read().strip()
     else:
-        print("No .env file found")
-
-    if not API_key:
-        raise ValueError("API key not found! Please set GENAI_KEY in .env")
+        raise FileNotFoundError("genai.key file not found!")
     
     print(f"trusted URLs: {trusted_domains}\n would you like to add any more domains?")
     choice = input("y/n: ").lower().strip()
