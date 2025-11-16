@@ -1,11 +1,13 @@
 from bs4 import BeautifulSoup as _BeautifulSoup
 from requests import get as _get, RequestException as _RequestException
+from urllib.parse import quote_plus as _quote_plus
 from sys import argv as _argv
 from argparse import ArgumentParser as _ArgumentParser
 from webbrowser import open_new_tab as _open_new_tab
 from random import uniform as _uniform
 from time import sleep as _sleep
-
+from google import genai as _genai
+from os import path as _path
 
 #-------------------
 # creates a function that gets the search term from either argparse, sys.argv, or user input
@@ -44,21 +46,43 @@ if search_.strip() == "":  # if the user has not provided a search term the user
 
     # ensures that a search term is provided
     while True:
-        search_ = input("Enter a search term: ")
+        try:
+            search_ = input("Enter a search term: ")
 
-        if search_.strip() != "":
+            if search_.strip() != "":
+                break
+            else:
+                print("Please enter a search term.")
+
+        # allows the user to exit the loop
+        except KeyboardInterrupt:  
+            print("\nGoodbye!")
             break
-        else:
-            print("Please enter a search term.")
+
+# creates a function that encodes a search term for the urls
+def encode_search(search_term: str) -> str:
+    return _quote_plus(search_term)
+
+#-------------------
+# creates a function that gets the AI summary of the data
+#-------------------
+def AI_summary(data: str, API_KEY: str) -> str:
+    client = _genai.Client(api_key=API_KEY)
+    response = client.models.generate_content(
+        model="gemini-2.5-flash",
+        contents=f"summarize this: {data}"
+    )
+    return response.text
 
 #-------------------
 # defines the trusted domains
 #-------------------
 trusted_domains = [
-    f"https://bbc.co.uk/search?q={search_}",
-    f"https://wikipedia.org/wiki/{search_}",
-    f"https://duckduckgo.com/search?q={search_}",
-    f"https://edition.cnn.com/search?q={search_}"
+    f"https://bbc.co.uk/search?q={encode_search(search_)}",
+    f"https://wikipedia.org/wiki/{encode_search(search_)}",
+    f"https://duckduckgo.com/search?q={encode_search(search_)}",
+    f"https://edition.cnn.com/search?q={encode_search(search_)}",
+    f"https://wolframalpha.com/input/?i={encode_search(search_)}"
 ]
 
 #-------------------
@@ -83,8 +107,9 @@ with open("scraped_results.txt", "w", encoding="utf-8") as file:
 #-------------------
 # creates a function that scrapes the data from the trusted domains
 #-------------------
-def scrape(trusted_URLs: tuple[str, ...] | list[str], filename: str, search_term: str, times: int = 1, headers: dict = headers_) -> None:
+def scrape(trusted_URLs: tuple[str, ...] | list[str], filename: str, times: int = 1, headers: dict = headers_, api_key: str) -> None:
     with open(filename, "a", encoding="utf-8") as file:
+        # the loop allows you to scrape the data multiple times
         for _ in range(times):
             try:
                 for url in trusted_URLs:
@@ -118,6 +143,11 @@ def scrape(trusted_URLs: tuple[str, ...] | list[str], filename: str, search_term
                         if text:
                             file.write(f"{text}\n")
                             print(text)
+                            
+                            # Store AI summary to avoid double calls
+                            summary = AI_summary(text, api_key)
+                            print(summary)
+                            file.write(f"\nAI Summary: {summary}\n")
 
                 # writes and prints a message to let the user know that the data has been scraped
                 file.write("\nAll data has been scraped from the provided URLs!\n")
@@ -140,6 +170,23 @@ def open_browser(trusted_URLs: tuple[str, ...] | list[str]):
 # runs the scraper and opens the browser (optional) if the script is not run as a module
 #-------------------
 if __name__ == "__main__":
+    API_key = None
+
+    if _path.exists(".env"):
+        with open(".env", "r") as f:
+            for line in f:
+                line = line.strip()
+                if line and not line.startswith("#"):
+                    if "=" in line:
+                        key, value = line.split("=", 1)
+                        if key.strip().lower() == "genai_key":
+                            API_key = value.strip()
+    else:
+        print("No .env file found")
+
+    if not API_key:
+        raise ValueError("API key not found! Please set GENAI_KEY in .env")
+    
     print(f"trusted URLs: {trusted_domains}\n would you like to add any more domains?")
     choice = input("y/n: ").lower().strip()
 
@@ -148,31 +195,29 @@ if __name__ == "__main__":
     #-------------------
 
     if choice == "y":
-        while True:
-            try:
-                while True:
-                    domain = input("Enter a URL: ").strip()
+        try:
+            while True:
+                domain = input("Enter a URL: ").strip()
 
-                    if domain.lower() in ("break", "exit", "quit", "stop"):
-                        break
+                if domain.lower() in ("break", "exit", "quit", "stop"):
+                    break
 
-                    # saftey check to ensure the URL is valid
-                    response = _get(domain, headers=headers_) # picks the last url and checks it
-                    
-                    if response.status_code == 200 and domain not in trusted_domains: # makes sure the URL is valid and not already in the list
-                        trusted_domains.append(domain)
-                        print("URL added successfully.")
-                    else:
-                        print("Failed to add URL.")
+                # saftey check to ensure the URL is valid
+                response = _get(domain, headers=headers_) # picks the last url and checks it
+                
+                if response.status_code == 200 and domain not in trusted_domains: # makes sure the URL is valid and not already in the list
+                    trusted_domains.append(domain)
+                    print("URL added successfully.")
+                else:
+                    print("Failed to add URL.")
 
-            # allows the user to exit the loop
-            except KeyboardInterrupt:
-                print("\nGoodbye!")
-                break
+        # allows the user to exit the loop
+        except KeyboardInterrupt:
+            print("\nGoodbye!")
 
     trusted_domains = tuple(trusted_domains)
 
-    scrape(trusted_domains, "scraped_results.txt")
+    scrape(trusted_domains, "scraped_results.txt", api_key=API_key)
     
     choice = input("Open browser? (y/n): ").lower().strip()
     
