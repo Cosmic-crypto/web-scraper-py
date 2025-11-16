@@ -1,3 +1,6 @@
+#-------------------
+# imports
+#-------------------
 from bs4 import BeautifulSoup as _BeautifulSoup
 from requests import get as _get, RequestException as _RequestException
 from urllib.parse import quote_plus as _quote_plus
@@ -7,7 +10,7 @@ from webbrowser import open_new_tab as _open_new_tab
 from random import uniform as _uniform
 from time import sleep as _sleep
 from google import genai as _genai
-from pathlib import Path as _Path
+from os import path as _path, environ as _environ 
 
 #-------------------
 # creates a function that gets the search term from either argparse, sys.argv, or user input
@@ -70,7 +73,7 @@ def AI_summary(data: str, API_KEY: str) -> str:
     client = _genai.Client(api_key=API_KEY)
     response = client.models.generate_content(
         model="gemini-2.5-flash",
-        contents=f"summarize this: {data}"
+        contents=f"summarize page for me: {data}"
     )
     return response.text
 
@@ -122,7 +125,10 @@ def scrape(trusted_URLs: tuple[str, ...] | list[str], filename: str, api_key: st
                         continue
 
                     soup = _BeautifulSoup(response.text, "html.parser")  # creates the html parser
-                    page = soup.find_all(["span", "p", "h1", "h2", "h3"])  # defines all the data and tags to be scraped
+                    if url != f"https://wikipedia.org/wiki/{encode_search(search_)}":
+                        page = soup.find_all(["span", "p", "h1", "h2", "h3"])  # defines all the data and tags to be scraped
+                    else:
+                        page = soup.find_all(["p", "h1", "h2", "h3"])  # defines all the data and tags to be scraped
 
                     # ensures that the data is found and else it will go to the next loop
                     if not page:
@@ -136,18 +142,30 @@ def scrape(trusted_URLs: tuple[str, ...] | list[str], filename: str, api_key: st
                     file.write(f"\n--- Results from {url} ---\n\n")
                     print(f"--- Results from {url} ---")
 
-                    for data in page:
-                        text = data.get_text(strip=True)
+                    data = ""
 
-                        # ensures that the text is not empty
-                        if text:
-                            file.write(f"{text}\n")
-                            print(text)
+                    try:
+                        for data_ in page:
+                            text = data_.get_text(strip=True, separator=" ")
+
+                            # ensures that the text is not empty
+                            if text:
+                                file.write(f"{text}\n\n")
+                                print(f"{text}\n")
+                                data += text
+                    except KeyboardInterrupt:
+                        print("\nScraping stopped goodbye!")
+                        break
                             
-                            # Store AI summary to avoid double calls
-                            summary = AI_summary(text, api_key)
-                            print(summary)
-                            file.write(f"\nAI Summary: {summary}\n")
+                    # Store AI summary to avoid double calls
+                    summary = AI_summary(data, api_key)
+
+                    chunk_size = 100
+                    print(f"\nAI Summary for {url}:\n")
+                    for i in range(0, len(summary), chunk_size):
+                        chunk = summary[i:i + chunk_size]
+                        print(chunk)
+                        file.write(f"{chunk}\n")
 
                 # writes and prints a message to let the user know that the data has been scraped
                 file.write("\nAll data has been scraped from the provided URLs!\n")
@@ -170,13 +188,17 @@ def open_browser(trusted_URLs: tuple[str, ...] | list[str]):
 # runs the scraper and opens the browser (optional) if the script is not run as a module
 #-------------------
 if __name__ == "__main__":
+    API_key = None
+    if _path.exists(".env"):
+        with open(".env", "r") as file:
+            for line in file:
+                if line.startswith("API_KEY="):
+                    API_key = line.strip().split("=")[1]  # extract the value
 
-    key_file = _Path("genai.key")
-    if key_file.exists():
-        with key_file.open() as f:
-            API_key = f.read().strip()
-    else:
-        raise FileNotFoundError("genai.key file not found!")
+    if not API_key:
+        raise ValueError("No API key found! Make sure your .env file exists and contains 'API_KEY=...'")
+
+
     
     print(f"trusted URLs: {trusted_domains}\n would you like to add any more domains?")
     choice = input("y/n: ").lower().strip()
