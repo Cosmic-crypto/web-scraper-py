@@ -20,6 +20,7 @@ Then install the required libraries:
 
 ```bash
 pip install requests beautifulsoup4
+pip install google
 ```
 
 🚀 Usage
